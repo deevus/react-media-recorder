@@ -26,6 +26,16 @@ function checkMediaConstraint(mediaConstraint) {
   }
 }
 
+function checkMediaRecorderOptions(mediaRecorderOptions = {}) {
+  const {mimeType} = mediaRecorderOptions;
+
+  if (mimeType != null && !MediaRecorder.isTypeSupported(mimeType)) {
+    return new Error(
+      `The mimeType [${mimeType}] which you've supplied is unsupported in this browser`
+    );
+  }
+}
+
 let errors = {
   AbortError: "media_aborted",
   NotAllowedError: "permission_denied",
@@ -44,6 +54,7 @@ export default class ReactMediaRecorder extends React.Component {
   static propTypes = {
     audio: ({ audio }) => checkMediaConstraint({ audio }),
     video: ({ video }) => checkMediaConstraint({ video }, true),
+    mediaRecorderOptions: checkMediaRecorderOptions,
     delay: PropTypes.number,
     muted: ({ muted, audio, video }) => {
       if (typeof muted !== "boolean") {
@@ -67,7 +78,8 @@ export default class ReactMediaRecorder extends React.Component {
     muted: false,
     delay: 0,
     render: () => null,
-    whenStopped: () => null
+    whenStopped: () => null,
+    mediaRecorderOptions: {},
   };
 
   constructor(props) {
@@ -174,7 +186,8 @@ export default class ReactMediaRecorder extends React.Component {
   };
 
   initMediaRecorder = stream => {
-    const mediaRecorder = new MediaRecorder(stream);
+    const {mediaRecorderOptions} = this.props;
+    const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
     mediaRecorder.ondataavailable = this.onRecordingActive;
     mediaRecorder.onstop = this.onRecordingStop;
     mediaRecorder.onerror = () => this.setState({ status: "recorder_error" });
